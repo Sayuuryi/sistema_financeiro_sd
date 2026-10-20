@@ -1,0 +1,9 @@
+{
+  "name": "fluxo-frontend",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Interface do financeiro com módulos JavaScript e proxy local para a API",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.mjs", "test": "node --test" }
+}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Fluxo | Gestão financeira</title>
+    <link rel="stylesheet" href="/assets/css/app.css" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Fluxo início"
+        ><span class="brand-icon">f</span
+        ><span
+          >fluxo<span class="brand-dot">.</span
+          ><small>GESTÃO FINANCEIRA</small></span
+        ></a
+      >
+      <div class="workspace">
+        <span class="workspace-icon">F</span>
+        <div>
+          Financeiro acadêmico<small>Projeto integrador · monólito</small>
+        </div>
+      </div>
+      <div class="nav-label">ESPAÇO DE TRABALHO</div>
+      <nav aria-label="Menu principal">
+        <button data-view="overview" class="active">
+          <span>◫</span>Visão geral
+        </button>
+        <button data-view="payables"><span>↗</span>Contas a pagar</button>
+        <button data-view="receivables"><span>↙</span>Contas a receber</button>
+        <button data-view="forecasts"><span>◷</span>Despesas previstas</button>
+        <button data-view="masters"><span>▤</span>Cadastros</button>
+        <button data-view="reports"><span>▥</span>Relatórios</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="/swagger-ui.html" target="_blank" rel="noopener"
+          >Documentação da API ↗</a
+        >
+        <div class="local-dot">Aplicação local</div>
+        <small>Java + Spring Boot · versão 1.2</small>
+      </div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <span id="breadcrumb">Financeiro <b>/</b> Visão geral</span>
+        <div class="topbar-right">
+          <span class="demo-tag">DEMONSTRAÇÃO</span><time id="today"></time
+          ><span class="avatar" title="Ambiente acadêmico">FI</span>
+        </div>
+      </header>
+      <main id="main" tabindex="-1" aria-live="polite">
+        <div class="loading">Carregando o financeiro…</div>
+      </main>
+      <footer>
+        Fluxo · Sistema de contas a pagar e a receber<span
+          >Dados de demonstração fictícios · execução local</span
+        >
+      </footer>
+    </div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <dialog id="modal">
+      <div class="dialog-head">
+        <div>
+          <span class="eyebrow" id="modal-eyebrow">FINANCEIRO</span>
+          <h2 id="modal-title"></h2>
+        </div>
+        <button class="icon-button" id="close-modal" aria-label="Fechar janela">
+          ×
+        </button>
+      </div>
+      <div id="modal-body"></div>
+    </dialog>
+  </body>
+</html>
