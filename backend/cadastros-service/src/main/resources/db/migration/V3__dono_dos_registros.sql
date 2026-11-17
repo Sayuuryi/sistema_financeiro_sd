@@ -1,0 +1,27 @@
+-- Cada registro pertence a um usuário; o que já existia fica com a conta de demonstração (id 1)
+ALTER TABLE pessoa ADD COLUMN usuario_id BIGINT;
+UPDATE pessoa SET usuario_id = 1;
+ALTER TABLE pessoa ALTER COLUMN usuario_id SET NOT NULL;
+CREATE INDEX ix_pessoa_usuario ON pessoa(usuario_id);
+ALTER TABLE categoria ADD COLUMN usuario_id BIGINT;
+UPDATE categoria SET usuario_id = 1;
+ALTER TABLE categoria ALTER COLUMN usuario_id SET NOT NULL;
+CREATE INDEX ix_categoria_usuario ON categoria(usuario_id);
+ALTER TABLE banco ADD COLUMN usuario_id BIGINT;
+UPDATE banco SET usuario_id = 1;
+ALTER TABLE banco ALTER COLUMN usuario_id SET NOT NULL;
+CREATE INDEX ix_banco_usuario ON banco(usuario_id);
+ALTER TABLE agencia ADD COLUMN usuario_id BIGINT;
+UPDATE agencia SET usuario_id = 1;
+ALTER TABLE agencia ALTER COLUMN usuario_id SET NOT NULL;
+CREATE INDEX ix_agencia_usuario ON agencia(usuario_id);
+ALTER TABLE conta_bancaria ADD COLUMN usuario_id BIGINT;
+UPDATE conta_bancaria SET usuario_id = 1;
+ALTER TABLE conta_bancaria ALTER COLUMN usuario_id SET NOT NULL;
+CREATE INDEX ix_conta_bancaria_usuario ON conta_bancaria(usuario_id);
+ALTER TABLE pessoa DROP CONSTRAINT pessoa_documento_key;
+ALTER TABLE pessoa ADD CONSTRAINT uk_pessoa_documento UNIQUE (usuario_id, documento);
+ALTER TABLE categoria DROP CONSTRAINT categoria_codigo_key;
+ALTER TABLE categoria ADD CONSTRAINT uk_categoria_codigo UNIQUE (usuario_id, codigo);
+ALTER TABLE banco DROP CONSTRAINT banco_codigo_key;
+ALTER TABLE banco ADD CONSTRAINT uk_banco_codigo UNIQUE (usuario_id, codigo);
