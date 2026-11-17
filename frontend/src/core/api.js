@@ -1,26 +1,27 @@
-import { services } from "../config.js";
+import { gateway } from "../config.js";
 import { tokenAtual } from "./sessao.js";
 
-const resources = new Map([
-  ...["pessoas", "categorias", "bancos", "agencias", "contas-bancarias"].map((r) => [
-    r,
-    "cadastros",
-  ]),
-  ["contas-pagar", "pagar"],
-  ["contas-receber", "receber"],
-  ["relatorios", "relatorios"],
-  ["visao-geral", "visaoGeral"],
-  ["despesas-previstas", "planejamento"],
-  ["usuarios", "usuarios"],
+// Recursos que o gateway conhece; ele decide qual serviço atende cada um
+const resources = new Set([
+  "pessoas",
+  "categorias",
+  "bancos",
+  "agencias",
+  "contas-bancarias",
+  "contas-pagar",
+  "contas-receber",
+  "relatorios",
+  "visao-geral",
+  "despesas-previstas",
+  "usuarios",
 ]);
 
 export function apiUrl(path) {
   const resource = path.match(/^\/api\/([^/?#]+)(?:\/|\?|$)/)?.[1];
-  const service = resources.get(resource);
-  if (!service) {
+  if (!resources.has(resource)) {
     throw new Error("Rota de API desconhecida: " + path);
   }
-  return services[service] + path.replace(/^\/api\/contas-(pagar|receber)/, "/api/contas");
+  return gateway + path;
 }
 
 export const SESSAO_EXPIRADA = "fluxo:sessao-expirada";

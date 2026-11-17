@@ -1,5 +1,6 @@
 package br.edu.fluxo.pagar.seguranca;
 
+import br.edu.fluxo.pagar.config.Balanceamento;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,14 +31,17 @@ public class Autenticacao implements HandlerInterceptor, WebMvcConfigurer {
 
     public Autenticacao(
         @Value("${seguranca.token-segredo}") String segredo,
-        @Value("${servicos.usuarios.url}") String urlUsuarios
+        @Value("${servicos.usuarios.url}") String urlUsuarios,
+        RestClient.Builder balanceado
     ) {
         this.segredo = Token.exigirSegredo(segredo);
         var factory = new JdkClientHttpRequestFactory(
             HttpClient.newBuilder().connectTimeout(Duration.ofMillis(1500)).build()
         );
         factory.setReadTimeout(Duration.ofMillis(2000));
-        this.usuarios = RestClient.builder().baseUrl(urlUsuarios).requestFactory(factory).build();
+        this.usuarios = Balanceamento.para(balanceado, urlUsuarios, "usuarios-service")
+            .requestFactory(factory)
+            .build();
     }
 
     @Override

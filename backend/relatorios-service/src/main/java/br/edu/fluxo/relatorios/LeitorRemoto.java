@@ -3,10 +3,17 @@ package br.edu.fluxo.relatorios;
 import br.edu.fluxo.relatorios.seguranca.UsuarioAtual;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryRegistry;
 import java.net.http.HttpClient;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -14,7 +21,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.*;
 import org.springframework.web.server.ResponseStatusException;
 
+// Recriado a cada /actuator/refresh para valer os tempos novos de Integracao
 @Component
+@RefreshScope
 public class LeitorRemoto {
 
     public record Destino(String servico, String caminho) {}
@@ -23,33 +32,42 @@ public class LeitorRemoto {
 
     private final Map<String, RestClient> clientes = new HashMap<>();
     private final ObjectMapper json;
+    private final CircuitBreakerRegistry circuitos;
+    private final Retry repeticao;
 
-    public LeitorRemoto(Environment env, ObjectMapper json) {
+    public LeitorRemoto(
+        Environment env,
+        ObjectMapper json,
+        Integracao integracao,
+        RestClient.Builder balanceado,
+        CircuitBreakerRegistry circuitos,
+        RetryRegistry repeticoes
+    ) {
         this.json = json;
-        var http = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(1500)).build();
+        this.circuitos = circuitos;
+        this.repeticao = repeticoes.retry("leitura");
+        var http = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMillis(integracao.getConexaoMs()))
+            .build();
         var factory = new JdkClientHttpRequestFactory(http);
-        factory.setReadTimeout(Duration.ofMillis(2000));
-        var defaults = Map.of(
+        factory.setReadTimeout(Duration.ofMillis(integracao.getLeituraMs()));
+        var nomes = Map.of(
             "pagar",
-            "18082",
+            "contas-pagar-service",
             "receber",
-            "18084",
+            "contas-receber-service",
             "planejamento",
-            "18083",
+            "planejamento-service",
             "cadastros",
-            "18081"
+            "cadastros-service"
         );
-        defaults.forEach((nome, porta) ->
+        nomes.forEach((nome, registro) -> {
+            String url = env.getProperty("servicos." + nome + ".url");
             clientes.put(
                 nome,
-                RestClient.builder()
-                    .baseUrl(
-                        env.getProperty("servicos." + nome + ".url", "http://127.0.0.1:" + porta)
-                    )
-                    .requestFactory(factory)
-                    .build()
-            )
-        );
+                Balanceamento.para(balanceado, url, registro).requestFactory(factory).build()
+            );
+        });
     }
 
     public Resultado ler(String servico, String caminho) {
@@ -58,8 +76,8 @@ public class LeitorRemoto {
 
     // As leituras em paralelo rodam em outras threads; o token vai explícito
     private Resultado ler(String servico, String caminho, String token) {
-        try {
-            var body = clientes
+        Supplier<JsonNode> leitura = () ->
+            clientes
                 .get(servico)
                 .get()
                 .uri(caminho)
@@ -70,7 +88,16 @@ public class LeitorRemoto {
                 })
                 .retrieve()
                 .body(JsonNode.class);
+        // Retry por fora do circuito: com ele aberto, não há nova tentativa
+        var protegida = Retry.decorateSupplier(
+            repeticao,
+            CircuitBreaker.decorateSupplier(circuitos.circuitBreaker(servico), leitura)
+        );
+        try {
+            var body = protegida.get();
             return new Resultado(servico, body, body != null);
+        } catch (CallNotPermittedException e) {
+            return new Resultado(servico, null, false);
         } catch (RestClientResponseException e) {
             if (e.getStatusCode().value() == 400) {
                 throw new ResponseStatusException(

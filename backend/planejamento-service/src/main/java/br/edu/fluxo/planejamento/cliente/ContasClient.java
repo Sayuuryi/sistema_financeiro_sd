@@ -2,30 +2,37 @@ package br.edu.fluxo.planejamento.cliente;
 
 import br.edu.fluxo.planejamento.api.Dtos.*;
 import br.edu.fluxo.planejamento.exceptions.RespostaRemotaInvalidaException;
-import org.springframework.beans.factory.annotation.Value;
+import br.edu.fluxo.planejamento.exceptions.ServicoIndisponivelException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Component;
 
+// Escrita: protegida pelo circuito, mas sem nova tentativa para não criar a conta duas vezes
 @Component
 public class ContasClient {
 
-    private final ClienteHttp http;
+    private static final String SERVICO = "contas";
 
-    public ContasClient(
-        @Value("${servicos.contas.url}") String url,
-        @Value("${integracao.timeout-ms}") int timeout
-    ) {
-        http = new ClienteHttp(url, "contas", timeout);
+    private final ContasApi api;
+
+    public ContasClient(ContasApi api) {
+        this.api = api;
     }
 
+    @CircuitBreaker(name = SERVICO, fallbackMethod = "converterSemContas")
     public ContaResponse converter(Long origem, ContaRequest request) {
-        var conta = http.post(
-            "/interno/previsoes/" + origem + "/conta",
-            request,
-            ContaResponse.class
-        );
+        var conta = Chamada.executar(SERVICO, () -> api.converter(origem, request));
         if (conta.id() == null || conta.id() <= 0 || !origem.equals(conta.despesaOrigemId())) {
-            throw new RespostaRemotaInvalidaException("contas");
+            throw new RespostaRemotaInvalidaException(SERVICO);
         }
         return conta;
+    }
+
+    private ContaResponse converterSemContas(
+        Long origem,
+        ContaRequest request,
+        CallNotPermittedException e
+    ) {
+        throw new ServicoIndisponivelException(SERVICO);
     }
 }

@@ -4,6 +4,7 @@ import br.edu.fluxo.usuarios.api.Dtos.*;
 import br.edu.fluxo.usuarios.exceptions.ErroNegocio;
 import br.edu.fluxo.usuarios.servico.Imagens;
 import br.edu.fluxo.usuarios.servico.UsuariosService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -28,13 +29,16 @@ public class UsuariosController {
         this.service = service;
     }
 
+    // Login e cadastro dividem a mesma cota contra tentativas em massa
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @RateLimiter(name = "acesso")
     public SessaoResponse cadastrar(@Valid @RequestBody CadastroRequest r) {
         return service.cadastrar(r);
     }
 
     @PostMapping("/login")
+    @RateLimiter(name = "acesso")
     public SessaoResponse entrar(@Valid @RequestBody LoginRequest r) {
         return service.entrar(r);
     }

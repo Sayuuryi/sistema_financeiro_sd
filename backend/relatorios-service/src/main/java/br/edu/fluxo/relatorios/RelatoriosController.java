@@ -2,6 +2,7 @@ package br.edu.fluxo.relatorios;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import java.time.LocalDate;
 import java.util.*;
 import org.springframework.http.*;
@@ -78,7 +79,9 @@ public class RelatoriosController {
         return result;
     }
 
+    // Exportações são pesadas: poucas ao mesmo tempo, as demais recebem 503 na hora
     @GetMapping("/contas.csv")
+    @Bulkhead(name = "exportacao", type = Bulkhead.Type.SEMAPHORE)
     public ResponseEntity<String> contasCsv(@RequestParam MultiValueMap<String, String> filtros) {
         String tipo = filtros.getFirst("tipo");
         if (tipo != null && !Set.of("PAGAR", "RECEBER").contains(tipo)) {
@@ -140,6 +143,7 @@ public class RelatoriosController {
     }
 
     @GetMapping("/movimentos.csv")
+    @Bulkhead(name = "exportacao", type = Bulkhead.Type.SEMAPHORE)
     public ResponseEntity<String> movimentosCsv(
         @RequestParam(required = false) LocalDate inicio,
         @RequestParam(required = false) LocalDate fim

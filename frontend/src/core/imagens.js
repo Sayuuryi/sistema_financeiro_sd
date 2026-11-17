@@ -1,4 +1,4 @@
-import { services } from "../config.js";
+import { gateway } from "../config.js";
 
 const KB = 1024;
 
@@ -40,9 +40,9 @@ export const FUNDOS = {
   "fundo:grafite": { nome: "Grafite", css: "linear-gradient(120deg, #1b2226, #4a5a61)" },
 };
 
-// O serviço devolve o caminho; a imagem é servida pelo próprio serviço de usuários
+// O serviço devolve o caminho; a imagem chega pelo gateway
 export const urlImagem = (caminho) =>
-  caminho?.startsWith("/api/") ? services.usuarios + caminho : caminho || null;
+  caminho?.startsWith("/api/") ? gateway + caminho : caminho || null;
 
 export const ehImagem = (valor) => /^(\/api\/|data:|https?:)/.test(valor ?? "");
 

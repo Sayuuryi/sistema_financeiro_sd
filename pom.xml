@@ -15,6 +15,9 @@
         <module>backend/visao-geral-service</module>
         <module>backend/usuarios-service</module>
         <module>backend/contas-receber-service</module>
+        <module>backend/config-server</module>
+        <module>backend/nomes-server</module>
+        <module>backend/gateway</module>
     </modules>
     <build>
         <plugins>

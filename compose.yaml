@@ -19,18 +19,55 @@ x-ambiente: &ambiente
   PORT: "8080"
   TZ: America/Sao_Paulo
   SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
-  CADASTROS_URL: http://cadastros:8080
-  CONTAS_URL: http://contas-pagar:8080
-  PAGAR_URL: http://contas-pagar:8080
-  RECEBER_URL: http://contas-receber:8080
-  PLANEJAMENTO_URL: http://planejamento:8080
-  USUARIOS_URL: http://usuarios:8080
+  # Configuração vem do config; os endereços entre serviços vêm do servidor de nomes
+  CONFIG_URL: http://config:8080
+  EUREKA_URL: http://nomes:8080/eureka
   HTTP_TIMEOUT_MS: "3000"
   FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
   # Mesmo segredo em todos os serviços: o de usuários assina e os outros conferem
   TOKEN_SEGREDO: ${TOKEN_SEGREDO:-fluxo-segredo-local-de-desenvolvimento-troque}
 
+# Serviços que buscam configuração e se registram no servidor de nomes
+x-dependencias: &dependencias
+  config: { condition: service_healthy }
+  nomes: { condition: service_healthy }
+
 services:
+  config:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: config-server }
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      PORT: "8080"
+      TZ: America/Sao_Paulo
+    ports: ["127.0.0.1:18888:8080"]
+
+  nomes:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: nomes-server }
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      PORT: "8080"
+      TZ: America/Sao_Paulo
+    ports: ["127.0.0.1:18761:8080"]
+
+  gateway:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: gateway }
+    environment:
+      <<: *ambiente
+    ports: ["127.0.0.1:18080:8080"]
+    depends_on: *dependencias
+
   db-cadastros:
     <<: *banco
     environment:
@@ -77,7 +114,25 @@ services:
       DB_PASSWORD: ${CADASTROS_PASSWORD:-cadastros_local}
     ports: ["127.0.0.1:18081:8080"]
     depends_on:
+      <<: *dependencias
       db-cadastros: { condition: service_healthy }
+
+  # Mesma API e mesmo banco: o gateway e os outros serviços dividem as chamadas entre as duas
+  cadastros-2:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: cadastros-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-cadastros:5432/fluxo_cadastros
+      DB_USER: cadastros
+      DB_PASSWORD: ${CADASTROS_PASSWORD:-cadastros_local}
+    depends_on:
+      <<: *dependencias
+      db-cadastros: { condition: service_healthy }
+      cadastros: { condition: service_healthy }
 
   contas-pagar:
     <<: *servico
@@ -92,6 +147,7 @@ services:
       DB_PASSWORD: ${CONTAS_PASSWORD:-contas_local}
     ports: ["127.0.0.1:18082:8080"]
     depends_on:
+      <<: *dependencias
       db-contas: { condition: service_healthy }
 
   planejamento:
@@ -107,6 +163,7 @@ services:
       DB_PASSWORD: ${PLANEJAMENTO_PASSWORD:-planejamento_local}
     ports: ["127.0.0.1:18083:8080"]
     depends_on:
+      <<: *dependencias
       db-planejamento: { condition: service_healthy }
 
   db-receber:
@@ -133,6 +190,7 @@ services:
       DB_PASSWORD: ${RECEBER_PASSWORD:-receber_local}
     ports: ["127.0.0.1:18084:8080"]
     depends_on:
+      <<: *dependencias
       db-receber: { condition: service_healthy }
 
   relatorios:
@@ -144,6 +202,7 @@ services:
     environment:
       <<: *ambiente
     ports: ["127.0.0.1:18085:8080"]
+    depends_on: *dependencias
 
   visao-geral:
     <<: *servico
@@ -154,6 +213,7 @@ services:
     environment:
       <<: *ambiente
     ports: ["127.0.0.1:18086:8080"]
+    depends_on: *dependencias
 
   db-usuarios:
     <<: *banco
@@ -179,6 +239,7 @@ services:
       DB_PASSWORD: ${USUARIOS_PASSWORD:-usuarios_local}
     ports: ["127.0.0.1:18087:8080"]
     depends_on:
+      <<: *dependencias
       db-usuarios: { condition: service_healthy }
 
   frontend:
@@ -187,6 +248,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      gateway: { condition: service_healthy }
 
 volumes:
   cadastros-dados:

@@ -1,6 +1,7 @@
 package br.edu.fluxo.usuarios.handle;
 
 import br.edu.fluxo.usuarios.exceptions.ErroNegocio;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -8,7 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.ErrorResponse;
@@ -39,6 +42,7 @@ public class TratadorErros {
                 case 404 -> "Registro não encontrado";
                 case 409 -> "Conflito de dados";
                 case 422 -> "Regra de negócio";
+                case 429 -> "Muitas tentativas";
                 case 502 -> "Resposta remota inválida";
                 case 503 -> "Serviço indisponível";
                 default -> "Falha na solicitação";
@@ -52,6 +56,21 @@ public class TratadorErros {
     @ExceptionHandler(ErroNegocio.class)
     ProblemDetail negocio(ErroNegocio e, HttpServletRequest r) {
         return problema(e.getStatus(), e.getCodigo(), e.getMessage(), r);
+    }
+
+    // Rate limiter sem permissão no ciclo: 429 e quando tentar de novo
+    @ExceptionHandler(RequestNotPermitted.class)
+    ResponseEntity<ProblemDetail> limite(RequestNotPermitted e, HttpServletRequest r) {
+        return ResponseEntity.status(429)
+            .header(HttpHeaders.RETRY_AFTER, "10")
+            .body(
+                problema(
+                    429,
+                    "MUITAS_TENTATIVAS",
+                    "Muitas tentativas seguidas. Aguarde alguns segundos e tente de novo.",
+                    r
+                )
+            );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
