@@ -14,14 +14,13 @@ import { useSessao } from "./contexto/SessaoContext.jsx";
 import { primeiroNome, saudacao } from "./core/sessao.js";
 import { Modal, Toast } from "./componentes/Dialogo.jsx";
 import { Avatar } from "./componentes/Avatar.jsx";
-import { EmpresaForm } from "./componentes/EmpresaForm.jsx";
 import { Loading } from "./componentes/Layout.jsx";
 import { VisaoGeral } from "./funcionalidades/VisaoGeral.jsx";
 import { Contas } from "./funcionalidades/Contas.jsx";
 import { Previsoes } from "./funcionalidades/Previsoes.jsx";
 import { Cadastros } from "./funcionalidades/Cadastros.jsx";
 import { Relatorios } from "./funcionalidades/Relatorios.jsx";
-import { Acesso } from "./funcionalidades/Acesso.jsx";
+import { Acesso, BoasVindas } from "./funcionalidades/Acesso.jsx";
 import { Perfil } from "./funcionalidades/Perfil.jsx";
 
 // Carrega os gráficos só ao abrir a dashboard
@@ -79,7 +78,6 @@ const dataPorExtenso = (iso) => {
 function Sidebar({ atual }) {
   const navigate = useNavigate();
   const { usuario } = useSessao();
-  const { openModal } = useApp();
   return (
     <aside className="sidebar">
       <Link className="brand" to="/" aria-label="Fluxo início">
@@ -98,9 +96,7 @@ function Sidebar({ atual }) {
       </Link>
       <button
         className="workspace workspace-card"
-        onClick={() =>
-          openModal(usuario.empresa ? "Editar empresa" : "Adicionar empresa", <EmpresaForm />)
-        }
+        onClick={() => navigate(PERFIL.path + "?campo=empresa")}
         aria-label={usuario.empresa ? "Editar empresa " + usuario.empresa : "Adicionar empresa"}>
         <span className="workspace-card-icon">
           <Building2 size={17} aria-hidden="true" />
@@ -206,8 +202,9 @@ function MenuUsuario() {
 }
 
 export default function App() {
-  const { usuario } = useSessao();
-  return usuario ? <Aplicacao /> : <Acesso />;
+  const { usuario, completarPerfil } = useSessao();
+  if (!usuario) return <Acesso />;
+  return completarPerfil ? <BoasVindas /> : <Aplicacao />;
 }
 
 function Aplicacao() {

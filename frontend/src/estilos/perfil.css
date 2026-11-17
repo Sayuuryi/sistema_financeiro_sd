@@ -556,3 +556,138 @@
 .user-menu-head b {
   margin: 0;
 }
+
+/* Complete seu perfil */
+
+.completar-perfil {
+  padding: 18px 22px 20px;
+  border-color: #c4ddd5;
+  background: linear-gradient(180deg, #f6fbf9, #fff);
+}
+
+.completar-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.completar-topo p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #7c8f96;
+}
+
+.completar-topo strong {
+  font-size: 20px;
+  color: var(--teal);
+}
+
+.completar-itens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.completar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  border: 1px dashed #b5dcd2;
+  background: #fff;
+  color: var(--teal);
+}
+
+button.completar-item:hover {
+  background: var(--teal-light);
+  border-style: solid;
+}
+
+.completar-item.feito {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--teal-light);
+  color: #2b8e74;
+}
+
+.campo-destaque input {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 4px #087f7626;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Cadastro em etapas */
+
+.auth-steps {
+  list-style: none;
+  display: flex;
+  gap: 18px;
+  padding: 0;
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: #8a9ca3;
+}
+
+.auth-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.auth-steps span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid #c9d6d9;
+  background: #fff;
+}
+
+.auth-steps li.atual {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.auth-steps li.atual span {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: #fff;
+}
+
+.auth-steps li.feito span {
+  border-color: #b5dcd2;
+  background: var(--teal-light);
+  color: var(--teal);
+}
+
+.auth-lead {
+  margin: -8px 0 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.auth-skip {
+  border: 0;
+  background: none;
+  color: #6a7e85;
+  font-size: 12px;
+  padding: 6px;
+  justify-self: center;
+}
+
+.auth-skip:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+
+.campo-destaque input {
+  outline: none;
+}

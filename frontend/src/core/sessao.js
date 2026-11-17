@@ -39,3 +39,19 @@ export const primeiroNome = (nome) =>
   String(nome ?? "")
     .trim()
     .split(/\s+/)[0] || "";
+
+// Itens que deixam o perfil completo, na ordem em que aparecem no cartão
+export const ITENS_PERFIL = [
+  ["foto", "Foto"],
+  ["empresa", "Empresa"],
+  ["cargo", "Cargo"],
+  ["telefone", "Telefone"],
+];
+
+export function progressoPerfil(usuario) {
+  const faltando = ITENS_PERFIL.filter(([chave]) => !String(usuario?.[chave] ?? "").trim()).map(
+    ([chave]) => chave,
+  );
+  const total = ITENS_PERFIL.length;
+  return { feitos: total - faltando.length, total, faltando };
+}

@@ -52,7 +52,12 @@ export function SessaoProvider({ children }) {
   );
 
   const cadastrar = useCallback(
-    async (dados) => salvar(await api("/api/usuarios", { method: "POST", body: dados })),
+    // Conta nova passa pelas boas-vindas antes de abrir o sistema
+    async (dados) =>
+      salvar({
+        ...(await api("/api/usuarios", { method: "POST", body: dados })),
+        completarPerfil: true,
+      }),
     [salvar],
   );
 
@@ -66,9 +71,22 @@ export function SessaoProvider({ children }) {
 
   const atualizarUsuario = useCallback((usuario) => salvar({ ...lerSessao(), usuario }), [salvar]);
 
+  const concluirCadastro = useCallback(
+    () => salvar({ ...lerSessao(), completarPerfil: false }),
+    [salvar],
+  );
+
   const value = useMemo(
-    () => ({ usuario: sessao?.usuario ?? null, entrar, cadastrar, sair, atualizarUsuario }),
-    [sessao, entrar, cadastrar, sair, atualizarUsuario],
+    () => ({
+      usuario: sessao?.usuario ?? null,
+      completarPerfil: Boolean(sessao?.completarPerfil),
+      entrar,
+      cadastrar,
+      sair,
+      atualizarUsuario,
+      concluirCadastro,
+    }),
+    [sessao, entrar, cadastrar, sair, atualizarUsuario, concluirCadastro],
   );
 
   return <SessaoContext.Provider value={value}>{children}</SessaoContext.Provider>;

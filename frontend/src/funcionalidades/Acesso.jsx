@@ -1,6 +1,20 @@
 import { useState } from "react";
-import { ChartColumn, Eye, EyeOff, Lock, Mail, QrCode, ReceiptText, UserRound } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  ChartColumn,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Phone,
+  QrCode,
+  ReceiptText,
+  UserRound,
+} from "lucide-react";
 import { useSessao } from "../contexto/SessaoContext.jsx";
+import { api } from "../core/api.js";
+import { primeiroNome } from "../core/sessao.js";
 import { ErroFormulario, useEnvio } from "../componentes/Formularios.jsx";
 
 function Campo({ icone, label, name, type = "text", ...attrs }) {
@@ -96,14 +110,30 @@ function Cadastrar() {
       <small className="auth-hint">Mínimo de 8 caracteres.</small>
       <ErroFormulario erro={erro} />
       <button type="submit" className="button primary auth-submit" disabled={enviando}>
-        {enviando ? "Criando conta…" : "Criar conta"}
+        {enviando ? "Criando conta…" : "Continuar"}
       </button>
     </form>
   );
 }
 
-export function Acesso() {
-  const [aba, setAba] = useState("entrar");
+function Etapas({ atual }) {
+  return (
+    <ol className="auth-steps" aria-label={"Passo " + atual + " de 2"}>
+      {["Sua conta", "Seu trabalho"].map((nome, i) => (
+        <li
+          key={nome}
+          className={i + 1 === atual ? "atual" : i + 1 < atual ? "feito" : ""}
+          aria-current={i + 1 === atual ? "step" : undefined}>
+          <span>{i + 1}</span>
+          {nome}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+// Marca à esquerda e cartão à direita, igual no login e nas boas-vindas
+function MolduraAcesso({ children }) {
   return (
     <div className="auth">
       <aside className="auth-brand">
@@ -135,28 +165,105 @@ export function Acesso() {
         </ul>
       </aside>
       <main className="auth-main">
-        <section className="auth-card">
-          <span className="eyebrow">{aba === "entrar" ? "ACESSO" : "NOVA CONTA"}</span>
-          <h1>{aba === "entrar" ? "Entrar no Fluxo" : "Criar sua conta"}</h1>
-          <div className="tabs auth-tabs" role="tablist">
-            <button
-              role="tab"
-              aria-selected={aba === "entrar"}
-              className={"tab" + (aba === "entrar" ? " active" : "")}
-              onClick={() => setAba("entrar")}>
-              Entrar
-            </button>
-            <button
-              role="tab"
-              aria-selected={aba === "cadastrar"}
-              className={"tab" + (aba === "cadastrar" ? " active" : "")}
-              onClick={() => setAba("cadastrar")}>
-              Criar conta
-            </button>
-          </div>
-          {aba === "entrar" ? <Entrar /> : <Cadastrar />}
-        </section>
+        <section className="auth-card">{children}</section>
       </main>
     </div>
+  );
+}
+
+export function Acesso() {
+  const [aba, setAba] = useState("entrar");
+  return (
+    <MolduraAcesso>
+      {aba === "entrar" ? <span className="eyebrow">ACESSO</span> : <Etapas atual={1} />}
+      <h1>{aba === "entrar" ? "Entrar no Fluxo" : "Criar sua conta"}</h1>
+      <div className="tabs auth-tabs" role="tablist">
+        <button
+          role="tab"
+          aria-selected={aba === "entrar"}
+          className={"tab" + (aba === "entrar" ? " active" : "")}
+          onClick={() => setAba("entrar")}>
+          Entrar
+        </button>
+        <button
+          role="tab"
+          aria-selected={aba === "cadastrar"}
+          className={"tab" + (aba === "cadastrar" ? " active" : "")}
+          onClick={() => setAba("cadastrar")}>
+          Criar conta
+        </button>
+      </div>
+      {aba === "entrar" ? <Entrar /> : <Cadastrar />}
+    </MolduraAcesso>
+  );
+}
+
+// Passo 2 do cadastro: dados de trabalho, todos opcionais
+export function BoasVindas() {
+  const { usuario, atualizarUsuario, concluirCadastro } = useSessao();
+  const { erro, enviando, enviar } = useEnvio(async (d) => {
+    const preenchidos = ["empresa", "cargo", "telefone"].some((c) => d[c].trim());
+    if (preenchidos) {
+      atualizarUsuario(
+        await api("/api/usuarios/eu", {
+          method: "PUT",
+          body: {
+            nome: usuario.nome,
+            email: usuario.email,
+            empresa: d.empresa.trim(),
+            cargo: d.cargo.trim(),
+            telefone: d.telefone.trim(),
+            versao: usuario.versao,
+          },
+        }),
+      );
+    }
+    concluirCadastro();
+  });
+
+  return (
+    <MolduraAcesso>
+      <Etapas atual={2} />
+      <h1>Boas-vindas, {primeiroNome(usuario.nome)}!</h1>
+      <p className="auth-lead">
+        Esses dados aparecem no menu e no seu perfil. Todos são opcionais e podem ser preenchidos
+        depois em <b>Meu perfil</b>.
+      </p>
+      <form onSubmit={enviar} className="auth-form">
+        <Campo
+          icone={<Building2 size={15} aria-hidden="true" />}
+          label="Empresa"
+          name="empresa"
+          autoComplete="organization"
+          maxLength={120}
+          defaultValue={usuario.empresa ?? ""}
+          autoFocus
+        />
+        <Campo
+          icone={<Briefcase size={15} aria-hidden="true" />}
+          label="Cargo"
+          name="cargo"
+          autoComplete="organization-title"
+          maxLength={80}
+          defaultValue={usuario.cargo ?? ""}
+        />
+        <Campo
+          icone={<Phone size={15} aria-hidden="true" />}
+          label="Telefone"
+          name="telefone"
+          type="tel"
+          autoComplete="tel"
+          maxLength={30}
+          defaultValue={usuario.telefone ?? ""}
+        />
+        <ErroFormulario erro={erro} />
+        <button type="submit" className="button primary auth-submit" disabled={enviando}>
+          {enviando ? "Salvando…" : "Salvar e continuar"}
+        </button>
+        <button type="button" className="auth-skip" disabled={enviando} onClick={concluirCadastro}>
+          Fazer depois
+        </button>
+      </form>
+    </MolduraAcesso>
   );
 }

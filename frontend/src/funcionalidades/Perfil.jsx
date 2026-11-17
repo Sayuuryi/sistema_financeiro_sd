@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
+  Briefcase,
   Building2,
   CalendarDays,
   Camera,
+  Check,
   Clock,
   ImagePlus,
   Loader2,
@@ -18,6 +21,7 @@ import { useApp } from "../contexto/AppContext.jsx";
 import { useSessao } from "../contexto/SessaoContext.jsx";
 import { api } from "../core/api.js";
 import { FUNDOS, ehImagem, estiloCapa, prepararImagem } from "../core/imagens.js";
+import { ITENS_PERFIL, progressoPerfil } from "../core/sessao.js";
 import { useQuadroEstatico } from "../componentes/QuadroEstatico.js";
 import { Avatar } from "../componentes/Avatar.jsx";
 import { ErroFormulario, Field, useEnvio } from "../componentes/Formularios.jsx";
@@ -65,7 +69,7 @@ function DadosConta({ usuario }) {
         titulo="Dados da conta"
         descricao="Nome e e-mail aparecem no menu e servem para entrar"
       />
-      <form className="panel-body" onSubmit={enviar} key={usuario.versao}>
+      <form className="panel-body perfil-dados" onSubmit={enviar} key={usuario.versao}>
         <div className="form-grid">
           <Field name="nome" label="Nome *" value={usuario.nome} required maxLength={120} />
           <Field
@@ -153,6 +157,59 @@ function Seguranca() {
         </div>
       </form>
     </article>
+  );
+}
+
+// Leva até o campo pedido (ou abre o menu da foto) e destaca por um instante
+function focarCampo(nome) {
+  if (nome === "foto") {
+    document.querySelector(".profile-photo-button")?.click();
+    return;
+  }
+  const campo = document.querySelector(`.perfil-dados [name="${nome}"]`);
+  if (!campo) return;
+  campo.scrollIntoView?.({ block: "center", behavior: "smooth" });
+  campo.focus({ preventScroll: true });
+  const rotulo = campo.closest(".field");
+  rotulo?.classList.add("campo-destaque");
+  setTimeout(() => rotulo?.classList.remove("campo-destaque"), 1800);
+}
+
+const ICONES_PERFIL = { foto: Camera, empresa: Building2, cargo: Briefcase, telefone: Phone };
+
+function CompletarPerfil({ usuario }) {
+  const { feitos, total, faltando } = progressoPerfil(usuario);
+  if (!faltando.length) return null;
+  const pct = Math.round((feitos / total) * 100);
+  return (
+    <section className="panel completar-perfil" aria-label="Complete seu perfil">
+      <div className="completar-topo">
+        <div>
+          <h2>Complete seu perfil</h2>
+          <p>
+            {feitos} de {total} itens preenchidos
+          </p>
+        </div>
+        <strong>{pct}%</strong>
+      </div>
+      <div className="bar-track">
+        <div className="bar" style={{ width: pct + "%" }} />
+      </div>
+      <div className="completar-itens">
+        {ITENS_PERFIL.map(([chave, rotulo]) => {
+          const Icone = ICONES_PERFIL[chave];
+          return faltando.includes(chave) ? (
+            <button key={chave} className="completar-item" onClick={() => focarCampo(chave)}>
+              <Icone size={14} aria-hidden="true" /> Adicionar {rotulo.toLowerCase()}
+            </button>
+          ) : (
+            <span key={chave} className="completar-item feito">
+              <Check size={14} aria-hidden="true" /> {rotulo}
+            </span>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -391,6 +448,19 @@ function CartaoPerfil({ usuario }) {
 
 export function Perfil() {
   const { usuario } = useSessao();
+  const [busca, setBusca] = useSearchParams();
+  const campo = busca.get("campo");
+
+  // Atalhos como o cartão Empresa do menu chegam com ?campo=
+  useEffect(() => {
+    if (!campo) return;
+    // Limpa o endereço só depois de focar; antes disso cancelaria o foco
+    const t = setTimeout(() => {
+      focarCampo(campo);
+      setBusca({}, { replace: true });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [campo, setBusca]);
 
   return (
     <>
@@ -402,6 +472,7 @@ export function Perfil() {
       />
       <section className="grid-2 profile-grid">
         <div className="profile-stack">
+          <CompletarPerfil usuario={usuario} />
           <DadosConta usuario={usuario} />
           <Seguranca />
         </div>
