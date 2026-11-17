@@ -1,0 +1,2 @@
+ALTER TABLE usuario ADD COLUMN foto TEXT;
+ALTER TABLE usuario ADD COLUMN capa TEXT;
