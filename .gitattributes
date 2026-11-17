@@ -1,0 +1,9 @@
+* text=auto eol=lf
+mvnw text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.java text eol=lf
+*.sql text eol=lf
+*.mjs text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

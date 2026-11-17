@@ -1,0 +1,195 @@
+name: fluxo-servicos
+
+x-banco: &banco
+  image: postgres:17-alpine
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+    interval: 5s
+    timeout: 3s
+    retries: 20
+    start_period: 10s
+
+x-servico: &servico
+  restart: unless-stopped
+  mem_limit: 512m
+
+x-ambiente: &ambiente
+  SERVER_ADDRESS: 0.0.0.0
+  PORT: "8080"
+  TZ: America/Sao_Paulo
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+  CADASTROS_URL: http://cadastros:8080
+  CONTAS_URL: http://contas-pagar:8080
+  PAGAR_URL: http://contas-pagar:8080
+  RECEBER_URL: http://contas-receber:8080
+  PLANEJAMENTO_URL: http://planejamento:8080
+  HTTP_TIMEOUT_MS: "3000"
+  FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+  # Mesmo segredo em todos os serviços: o de usuários assina e os outros conferem
+  TOKEN_SEGREDO: ${TOKEN_SEGREDO:-fluxo-segredo-local-de-desenvolvimento-troque}
+
+services:
+  db-cadastros:
+    <<: *banco
+    environment:
+      POSTGRES_DB: fluxo_cadastros
+      POSTGRES_USER: cadastros
+      POSTGRES_PASSWORD: ${CADASTROS_PASSWORD:-cadastros_local}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports: ["127.0.0.1:5441:5432"]
+    volumes: ["cadastros-dados:/var/lib/postgresql/data"]
+
+  db-contas:
+    <<: *banco
+    environment:
+      POSTGRES_DB: fluxo_contas
+      POSTGRES_USER: contas
+      POSTGRES_PASSWORD: ${CONTAS_PASSWORD:-contas_local}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports: ["127.0.0.1:5442:5432"]
+    volumes: ["contas-dados:/var/lib/postgresql/data"]
+
+  db-planejamento:
+    <<: *banco
+    environment:
+      POSTGRES_DB: fluxo_planejamento
+      POSTGRES_USER: planejamento
+      POSTGRES_PASSWORD: ${PLANEJAMENTO_PASSWORD:-planejamento_local}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports: ["127.0.0.1:5443:5432"]
+    volumes: ["planejamento-dados:/var/lib/postgresql/data"]
+
+  cadastros:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: cadastros-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-cadastros:5432/fluxo_cadastros
+      DB_USER: cadastros
+      DB_PASSWORD: ${CADASTROS_PASSWORD:-cadastros_local}
+    ports: ["127.0.0.1:18081:8080"]
+    depends_on:
+      db-cadastros: { condition: service_healthy }
+
+  contas-pagar:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: contas-pagar-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-contas:5432/fluxo_contas
+      DB_USER: contas
+      DB_PASSWORD: ${CONTAS_PASSWORD:-contas_local}
+    ports: ["127.0.0.1:18082:8080"]
+    depends_on:
+      db-contas: { condition: service_healthy }
+
+  planejamento:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: planejamento-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-planejamento:5432/fluxo_planejamento
+      DB_USER: planejamento
+      DB_PASSWORD: ${PLANEJAMENTO_PASSWORD:-planejamento_local}
+    ports: ["127.0.0.1:18083:8080"]
+    depends_on:
+      db-planejamento: { condition: service_healthy }
+
+  db-receber:
+    <<: *banco
+    environment:
+      POSTGRES_DB: fluxo_receber
+      POSTGRES_USER: receber
+      POSTGRES_PASSWORD: ${RECEBER_PASSWORD:-receber_local}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports: ["127.0.0.1:5444:5432"]
+    volumes: ["receber-dados:/var/lib/postgresql/data"]
+
+  contas-receber:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: contas-receber-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-receber:5432/fluxo_receber
+      DB_USER: receber
+      DB_PASSWORD: ${RECEBER_PASSWORD:-receber_local}
+    ports: ["127.0.0.1:18084:8080"]
+    depends_on:
+      db-receber: { condition: service_healthy }
+
+  relatorios:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: relatorios-service }
+    environment:
+      <<: *ambiente
+    ports: ["127.0.0.1:18085:8080"]
+
+  visao-geral:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: visao-geral-service }
+    environment:
+      <<: *ambiente
+    ports: ["127.0.0.1:18086:8080"]
+
+  db-usuarios:
+    <<: *banco
+    environment:
+      POSTGRES_DB: fluxo_usuarios
+      POSTGRES_USER: usuarios
+      POSTGRES_PASSWORD: ${USUARIOS_PASSWORD:-usuarios_local}
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
+    ports: ["127.0.0.1:5445:5432"]
+    volumes: ["usuarios-dados:/var/lib/postgresql/data"]
+
+  usuarios:
+    <<: *servico
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args: { SERVICE: usuarios-service }
+    environment:
+      <<: *ambiente
+      DB_URL: jdbc:postgresql://db-usuarios:5432/fluxo_usuarios
+      DB_USER: usuarios
+      DB_PASSWORD: ${USUARIOS_PASSWORD:-usuarios_local}
+    ports: ["127.0.0.1:18087:8080"]
+    depends_on:
+      db-usuarios: { condition: service_healthy }
+
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports: ["127.0.0.1:8080:8080"]
+
+volumes:
+  cadastros-dados:
+  contas-dados:
+  planejamento-dados:
+  receber-dados:
+  usuarios-dados:
