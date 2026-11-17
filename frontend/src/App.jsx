@@ -1,11 +1,20 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Building2, CalendarDays, ChevronDown, LogOut, PenLine, UserRound } from "lucide-react";
+import {
+  Building2,
+  CalendarDays,
+  ChevronDown,
+  LogOut,
+  PenLine,
+  Plus,
+  UserRound,
+} from "lucide-react";
 import { useApp } from "./contexto/AppContext.jsx";
 import { useSessao } from "./contexto/SessaoContext.jsx";
 import { primeiroNome, saudacao } from "./core/sessao.js";
 import { Modal, Toast } from "./componentes/Dialogo.jsx";
 import { Avatar } from "./componentes/Avatar.jsx";
+import { EmpresaForm } from "./componentes/EmpresaForm.jsx";
 import { Loading } from "./componentes/Layout.jsx";
 import { VisaoGeral } from "./funcionalidades/VisaoGeral.jsx";
 import { Contas } from "./funcionalidades/Contas.jsx";
@@ -70,6 +79,7 @@ const dataPorExtenso = (iso) => {
 function Sidebar({ atual }) {
   const navigate = useNavigate();
   const { usuario } = useSessao();
+  const { openModal } = useApp();
   return (
     <aside className="sidebar">
       <Link className="brand" to="/" aria-label="Fluxo início">
@@ -88,8 +98,10 @@ function Sidebar({ atual }) {
       </Link>
       <button
         className="workspace workspace-card"
-        onClick={() => navigate(PERFIL.path)}
-        title="Editar empresa no perfil">
+        onClick={() =>
+          openModal(usuario.empresa ? "Editar empresa" : "Adicionar empresa", <EmpresaForm />)
+        }
+        aria-label={usuario.empresa ? "Editar empresa " + usuario.empresa : "Adicionar empresa"}>
         <span className="workspace-card-icon">
           <Building2 size={17} aria-hidden="true" />
         </span>
@@ -97,7 +109,11 @@ function Sidebar({ atual }) {
           <small>Empresa</small>
           {usuario.empresa || "Adicionar empresa"}
         </span>
-        <PenLine size={13} aria-hidden="true" className="workspace-card-edit" />
+        {usuario.empresa ? (
+          <PenLine size={13} aria-hidden="true" className="workspace-card-edit" />
+        ) : (
+          <Plus size={15} aria-hidden="true" className="workspace-card-edit" />
+        )}
       </button>
       <div className="nav-label">MENU</div>
       <nav aria-label="Menu principal">

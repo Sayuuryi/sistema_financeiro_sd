@@ -447,3 +447,11 @@
 .cover-swatch:disabled {
   opacity: 0.5;
 }
+
+.empresa-dica {
+  margin-top: 10px;
+}
+
+.empresa-remover {
+  margin-right: auto;
+}
