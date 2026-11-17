@@ -1,0 +1,163 @@
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) 1.1fr;
+  background: var(--bg);
+}
+
+.auth-brand {
+  background: var(--navy);
+  color: #eaf4f4;
+  padding: 44px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.auth-brand .brand {
+  margin: 0;
+}
+
+.auth-art {
+  width: min(100%, 380px);
+  margin: auto auto 0;
+}
+
+.auth-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto auto;
+  display: grid;
+  gap: 14px;
+  color: #aac0c4;
+  font-size: 13px;
+  width: min(100%, 380px);
+}
+
+.auth-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-features svg {
+  color: #5ed0b4;
+  flex: 0 0 auto;
+}
+
+.auth-main {
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+}
+
+.auth-card {
+  width: min(100%, 420px);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 34px 32px;
+  box-shadow: 0 18px 50px #122d3614;
+}
+
+.auth-card h1 {
+  margin-bottom: 20px;
+}
+
+.auth-tabs .tab {
+  flex: 1;
+}
+
+.auth-form {
+  display: grid;
+  gap: 15px;
+}
+
+.auth-form .form-error {
+  margin-bottom: 0;
+}
+
+.auth-input {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #dce6e7;
+  border-radius: 8px;
+  padding: 0 11px;
+  background: #fff;
+  color: #8aa2a8;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auth-input:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px #087f761a;
+}
+
+.field.auth-field .auth-input input {
+  border: 0;
+  padding: 11px 0;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-eye {
+  border: 0;
+  background: none;
+  color: #8aa2a8;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+
+.auth-hint {
+  color: #94a5a9;
+  font-size: 10px;
+  margin-top: -6px;
+}
+
+.auth-submit {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.profile-grid {
+  grid-template-columns: 1.65fr 1fr;
+  align-items: start;
+}
+
+.profile-stack {
+  display: grid;
+  gap: 22px;
+}
+
+@media (max-width: 1150px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+  .auth-brand {
+    padding: 24px;
+    gap: 16px;
+  }
+  .auth-art,
+  .auth-features {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .auth-card {
+    padding: 26px 20px;
+  }
+}
