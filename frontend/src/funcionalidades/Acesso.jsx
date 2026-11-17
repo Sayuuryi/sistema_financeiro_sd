@@ -119,7 +119,7 @@ function Cadastrar() {
 function Etapas({ atual }) {
   return (
     <ol className="auth-steps" aria-label={"Passo " + atual + " de 2"}>
-      {["Sua conta", "Seu trabalho"].map((nome, i) => (
+      {["Sua conta", "Seu perfil"].map((nome, i) => (
         <li
           key={nome}
           className={i + 1 === atual ? "atual" : i + 1 < atual ? "feito" : ""}
