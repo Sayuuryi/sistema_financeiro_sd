@@ -24,6 +24,7 @@ x-ambiente: &ambiente
   PAGAR_URL: http://contas-pagar:8080
   RECEBER_URL: http://contas-receber:8080
   PLANEJAMENTO_URL: http://planejamento:8080
+  USUARIOS_URL: http://usuarios:8080
   HTTP_TIMEOUT_MS: "3000"
   FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
   # Mesmo segredo em todos os serviços: o de usuários assina e os outros conferem

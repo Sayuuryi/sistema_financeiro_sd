@@ -83,6 +83,11 @@ public class UsuariosService {
     }
 
     @Transactional(readOnly = true)
+    public long usuarioDaSessao(String autorizacao) {
+        return sessao(autorizacao).getUsuario().getId();
+    }
+
+    @Transactional(readOnly = true)
     public PerfilResponse perfil(String autorizacao) {
         return PerfilResponse.de(sessao(autorizacao).getUsuario());
     }
