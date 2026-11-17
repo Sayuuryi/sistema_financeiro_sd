@@ -26,11 +26,7 @@ public class Usuario extends Entidade {
     @Column(length = 120)
     private String empresa;
 
-    // Foto, capa e último acesso não disputam a edição dos dados do perfil
-    @OptimisticLock(excluded = true)
-    @Column(columnDefinition = "text")
-    private String foto;
-
+    // Capa e último acesso não disputam a edição dos dados do perfil
     @OptimisticLock(excluded = true)
     @Column(columnDefinition = "text")
     private String capa;
@@ -88,14 +84,6 @@ public class Usuario extends Entidade {
 
     public void setEmpresa(String empresa) {
         this.empresa = empresa;
-    }
-
-    public String getFoto() {
-        return foto;
-    }
-
-    public void setFoto(String foto) {
-        this.foto = foto;
     }
 
     public String getCapa() {

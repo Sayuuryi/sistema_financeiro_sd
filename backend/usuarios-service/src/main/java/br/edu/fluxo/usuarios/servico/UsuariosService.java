@@ -23,6 +23,7 @@ public class UsuariosService {
 
     private final UsuarioRepository usuarios;
     private final SessaoRepository sessoes;
+    private final ImagemUsuarioRepository imagens;
     private final PasswordEncoder senhas;
     private final Clock clock;
     private final Duration duracao;
@@ -33,6 +34,7 @@ public class UsuariosService {
     public UsuariosService(
         UsuarioRepository usuarios,
         SessaoRepository sessoes,
+        ImagemUsuarioRepository imagens,
         PasswordEncoder senhas,
         Clock clock,
         @Value("${sessao.duracao-horas}") long horas,
@@ -41,6 +43,7 @@ public class UsuariosService {
         this.segredo = Token.exigirSegredo(segredo);
         this.usuarios = usuarios;
         this.sessoes = sessoes;
+        this.imagens = imagens;
         this.senhas = senhas;
         this.clock = clock;
         this.duracao = Duration.ofHours(horas);
@@ -89,7 +92,7 @@ public class UsuariosService {
 
     @Transactional(readOnly = true)
     public PerfilResponse perfil(String autorizacao) {
-        return PerfilResponse.de(sessao(autorizacao).getUsuario());
+        return perfilDe(sessao(autorizacao).getUsuario());
     }
 
     @Transactional
@@ -110,27 +113,83 @@ public class UsuariosService {
         u.setCargo(opcional(r.cargo()));
         u.setEmpresa(opcional(r.empresa()));
         usuarios.saveAndFlush(u);
-        return PerfilResponse.de(u);
+        return perfilDe(u);
     }
 
     @Transactional
-    public PerfilResponse trocarFoto(String autorizacao, String imagem) {
+    public PerfilResponse trocarImagem(
+        String autorizacao,
+        String tipo,
+        byte[] bytes,
+        String contentType
+    ) {
         var u = sessao(autorizacao).getUsuario();
-        u.setFoto(imagem == null ? null : Imagens.validar(imagem, Imagens.LIMITE_FOTO));
-        usuarios.saveAndFlush(u);
-        return PerfilResponse.de(u);
-    }
-
-    @Transactional
-    public PerfilResponse trocarCapa(String autorizacao, String capa) {
-        var u = sessao(autorizacao).getUsuario();
-        if (capa == null || Imagens.ehFundoPronto(capa)) {
-            u.setCapa(capa);
-        } else {
-            u.setCapa(Imagens.validar(capa, Imagens.LIMITE_CAPA));
+        boolean capa = tipo.equals("CAPA");
+        var formato = Imagens.validar(bytes, contentType, capa);
+        var imagem = new ImagemUsuario();
+        imagem.setUsuarioId(u.getId());
+        imagem.setTipo(tipo);
+        imagem.setConteudo(bytes);
+        imagem.setMediaType(formato.mediaType);
+        imagem.setHash(sha256(bytes));
+        imagem.setAtualizadoEm(agora());
+        imagens.save(imagem);
+        if (capa) {
+            u.setCapa(null);
         }
-        usuarios.saveAndFlush(u);
-        return PerfilResponse.de(u);
+        imagens.flush();
+        return perfilDe(u);
+    }
+
+    @Transactional
+    public PerfilResponse removerImagem(String autorizacao, String tipo) {
+        var u = sessao(autorizacao).getUsuario();
+        imagens.deleteById(new ImagemUsuario.Chave(u.getId(), tipo));
+        if (tipo.equals("CAPA")) {
+            u.setCapa(null);
+        }
+        imagens.flush();
+        return perfilDe(u);
+    }
+
+    @Transactional
+    public PerfilResponse escolherFundo(String autorizacao, String fundo) {
+        if (!Imagens.ehFundoPronto(fundo)) {
+            throw ErroNegocio.regra("Escolha um dos fundos disponíveis.");
+        }
+        var u = sessao(autorizacao).getUsuario();
+        imagens.deleteById(new ImagemUsuario.Chave(u.getId(), "CAPA"));
+        u.setCapa(fundo);
+        imagens.flush();
+        return perfilDe(u);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ImagemUsuario> imagem(long usuarioId, String tipo, String hash) {
+        return imagens.findByUsuarioIdAndTipoAndHash(usuarioId, tipo, hash);
+    }
+
+    // O hash no endereço deixa o navegador guardar a imagem sem prazo
+    private PerfilResponse perfilDe(Usuario u) {
+        String foto = null;
+        String capa = u.getCapa();
+        for (var r : imagens.resumos(u.getId())) {
+            String endereco =
+                "/api/usuarios/imagens/" +
+                u.getId() +
+                "/" +
+                r.getTipo().toLowerCase(Locale.ROOT) +
+                "/" +
+                r.getHash().strip() +
+                "." +
+                Imagens.Formato.deMediaType(r.getMediaType()).extensao;
+            if (r.getTipo().equals("FOTO")) {
+                foto = endereco;
+            } else {
+                capa = endereco;
+            }
+        }
+        return PerfilResponse.de(u, foto, capa);
     }
 
     @Transactional
@@ -164,7 +223,7 @@ public class UsuariosService {
         s.setCriadaEm(agora());
         s.setExpiraEm(expira);
         sessoes.save(s);
-        return new SessaoResponse(token, s.getExpiraEm(), PerfilResponse.de(u));
+        return new SessaoResponse(token, s.getExpiraEm(), perfilDe(u));
     }
 
     private String token(String autorizacao) {
@@ -179,10 +238,12 @@ public class UsuariosService {
     }
 
     private static String hash(String token) {
+        return sha256(token.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String sha256(byte[] bytes) {
         try {
-            return HexFormat.of().formatHex(
-                MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8))
-            );
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }

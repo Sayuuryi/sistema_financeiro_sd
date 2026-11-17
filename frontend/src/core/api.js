@@ -48,7 +48,11 @@ function erroHttp(mensagem, status) {
 
 export async function api(path, options = {}) {
   const headers = comToken({ ...options.headers });
-  if (options.body) {
+  // Imagens vão como arquivo, sem virar texto
+  const arquivo = options.body instanceof Blob;
+  if (arquivo) {
+    headers["Content-Type"] = options.body.type || "application/octet-stream";
+  } else if (options.body) {
     headers["Content-Type"] = "application/json";
   }
   const url = apiUrl(path);
@@ -57,8 +61,8 @@ export async function api(path, options = {}) {
     response = await fetch(url, {
       ...options,
       headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: options.signal || AbortSignal.timeout(6500),
+      body: arquivo ? options.body : options.body ? JSON.stringify(options.body) : undefined,
+      signal: options.signal || AbortSignal.timeout(arquivo ? 30000 : 6500),
     });
   } catch {
     throw erroHttp(

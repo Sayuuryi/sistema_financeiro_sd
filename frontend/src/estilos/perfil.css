@@ -394,3 +394,56 @@
     display: none;
   }
 }
+
+/* Envio de foto e capa */
+
+.profile-sending {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #0b1f25b3;
+  backdrop-filter: blur(4px);
+  color: #fff;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.profile-photo-sending {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #122d3699;
+  color: #fff;
+}
+
+.spin {
+  animation: girar 0.9s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+.cover-hint {
+  color: #8a9ca3;
+  font-size: 10px;
+  text-align: center;
+}
+
+.cover-swatch:disabled {
+  opacity: 0.5;
+}

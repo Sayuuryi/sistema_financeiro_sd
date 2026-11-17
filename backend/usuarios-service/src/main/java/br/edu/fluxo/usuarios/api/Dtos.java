@@ -30,7 +30,7 @@ public final class Dtos {
         @NotBlank @Size(min = 8, max = 72, message = "use de 8 a 72 caracteres") String novaSenha
     ) {}
 
-    public record ImagemRequest(String imagem) {}
+    public record FundoRequest(@NotBlank String fundo) {}
 
     public record PerfilResponse(
         Long id,
@@ -45,7 +45,8 @@ public final class Dtos {
         OffsetDateTime criadoEm,
         OffsetDateTime ultimoAcessoEm
     ) {
-        public static PerfilResponse de(Usuario u) {
+        // foto e capa chegam como endereço; a capa também pode ser um fundo pronto
+        public static PerfilResponse de(Usuario u, String foto, String capa) {
             return new PerfilResponse(
                 u.getId(),
                 u.getVersao(),
@@ -54,8 +55,8 @@ public final class Dtos {
                 u.getTelefone(),
                 u.getCargo(),
                 u.getEmpresa(),
-                u.getFoto(),
-                u.getCapa(),
+                foto,
+                capa,
                 u.getCriadoEm(),
                 u.getUltimoAcessoEm()
             );

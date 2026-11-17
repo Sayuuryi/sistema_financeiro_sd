@@ -5,6 +5,7 @@ import {
   Camera,
   Clock,
   ImagePlus,
+  Loader2,
   KeyRound,
   LogOut,
   Mail,
@@ -16,7 +17,8 @@ import {
 import { useApp } from "../contexto/AppContext.jsx";
 import { useSessao } from "../contexto/SessaoContext.jsx";
 import { api } from "../core/api.js";
-import { FUNDOS, estiloCapa, reduzirImagem } from "../core/imagens.js";
+import { FUNDOS, ehImagem, estiloCapa, prepararImagem } from "../core/imagens.js";
+import { useQuadroEstatico } from "../componentes/QuadroEstatico.js";
 import { Avatar } from "../componentes/Avatar.jsx";
 import { Field, useEnvio } from "../componentes/Formularios.jsx";
 import { PageHead } from "../componentes/Layout.jsx";
@@ -158,16 +160,17 @@ function Seguranca() {
   );
 }
 
-// Envia foto ou capa já reduzida e atualiza a sessão
-function useImagem(rota) {
+// Envia, remove ou troca foto e capa e atualiza a sessão
+function useImagem(destino) {
   const { atualizarUsuario } = useSessao();
   const { toast } = useApp();
   const [enviando, setEnviando] = useState(false);
+  const rota = "/api/usuarios/eu/" + destino;
 
-  async function salvar(valor, mensagem) {
+  async function executar(pedido, mensagem) {
     setEnviando(true);
     try {
-      atualizarUsuario(await api(rota, { method: "PUT", body: { imagem: valor } }));
+      atualizarUsuario(await pedido());
       toast(mensagem);
     } catch (erro) {
       toast(erro.message);
@@ -180,20 +183,29 @@ function useImagem(rota) {
     const arquivo = evento.target.files?.[0];
     evento.target.value = "";
     if (!arquivo) return;
+    let imagem;
     try {
-      await salvar(await reduzirImagem(arquivo, largura, altura), mensagem);
+      imagem = await prepararImagem(arquivo, destino, largura, altura);
     } catch (erro) {
       toast(erro.message);
+      return;
     }
+    await executar(() => api(rota, { method: "PUT", body: imagem }), mensagem);
   }
 
-  return { enviando, salvar, enviarArquivo };
+  const remover = (mensagem) => executar(() => api(rota, { method: "DELETE" }), mensagem);
+  const escolherFundo = (fundo) =>
+    executar(() => api(rota + "/fundo", { method: "PUT", body: { fundo } }), "Capa atualizada.");
+
+  return { enviando, enviarArquivo, remover, escolherFundo };
 }
 
 function CartaoPerfil({ usuario }) {
   const { sair } = useSessao();
-  const foto = useImagem("/api/usuarios/eu/foto");
-  const capa = useImagem("/api/usuarios/eu/capa");
+  const foto = useImagem("foto");
+  const capa = useImagem("capa");
+  const capaVisivel = useQuadroEstatico(usuario.capa);
+  const capaPropria = ehImagem(usuario.capa);
   const [fundos, setFundos] = useState(false);
   const arquivoFoto = useRef(null);
   const arquivoCapa = useRef(null);
@@ -201,7 +213,14 @@ function CartaoPerfil({ usuario }) {
 
   return (
     <article className="panel profile-card">
-      <div className="profile-cover" style={estiloCapa(usuario.capa)}>
+      <div
+        className="profile-cover"
+        style={estiloCapa(capaPropria ? capaVisivel || usuario.capa : usuario.capa)}>
+        {capa.enviando ? (
+          <span className="profile-sending" role="status">
+            <Loader2 size={15} aria-hidden="true" className="spin" /> Enviando capa…
+          </span>
+        ) : null}
         <button
           className="profile-cover-button"
           onClick={() => setFundos((v) => !v)}
@@ -219,29 +238,37 @@ function CartaoPerfil({ usuario }) {
                 className={
                   "cover-swatch" + ((usuario.capa ?? "fundo:teal") === chave ? " active" : "")
                 }
+                disabled={capa.enviando}
                 style={{ background: fundo.css }}
                 title={fundo.nome}
                 aria-label={"Fundo " + fundo.nome}
-                onClick={() => capa.salvar(chave, "Capa atualizada.")}
+                onClick={() => capa.escolherFundo(chave)}
               />
             ))}
           </div>
           <div className="actions">
-            <button className="button small" onClick={() => arquivoCapa.current.click()}>
-              <ImagePlus size={13} aria-hidden="true" /> Enviar imagem
+            <button
+              className="button small"
+              disabled={capa.enviando}
+              onClick={() => arquivoCapa.current.click()}>
+              <ImagePlus size={13} aria-hidden="true" /> Enviar imagem ou GIF
             </button>
             {usuario.capa ? (
               <button
                 className="button small danger"
-                onClick={() => capa.salvar(null, "Capa padrão restaurada.")}>
+                disabled={capa.enviando}
+                onClick={() => capa.remover("Capa padrão restaurada.")}>
                 <Trash2 size={13} aria-hidden="true" /> Restaurar padrão
               </button>
             ) : null}
           </div>
+          <small className="cover-hint">
+            PNG, JPEG ou WebP são ajustados automaticamente. GIF animado até 4 MB.
+          </small>
           <input
             ref={arquivoCapa}
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/png,image/jpeg,image/webp,image/gif"
             hidden
             onChange={(e) => capa.enviarArquivo(e, 1200, 360, "Capa atualizada.")}
           />
@@ -249,6 +276,11 @@ function CartaoPerfil({ usuario }) {
       ) : null}
       <div className="profile-avatar-wrap">
         <Avatar usuario={usuario} tamanho={92} className="profile-avatar" />
+        {foto.enviando ? (
+          <span className="profile-photo-sending" role="status" aria-label="Enviando foto">
+            <Loader2 size={20} aria-hidden="true" className="spin" />
+          </span>
+        ) : null}
         <button
           className="profile-photo-button"
           aria-label="Trocar foto"
@@ -260,7 +292,7 @@ function CartaoPerfil({ usuario }) {
         <input
           ref={arquivoFoto}
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg,image/webp,image/gif"
           hidden
           onChange={(e) => foto.enviarArquivo(e, 320, 320, "Foto atualizada.")}
         />
@@ -271,7 +303,7 @@ function CartaoPerfil({ usuario }) {
         <button
           className="profile-remove-photo"
           disabled={foto.enviando}
-          onClick={() => foto.salvar(null, "Foto removida.")}>
+          onClick={() => foto.remover("Foto removida.")}>
           Remover foto
         </button>
       ) : null}
