@@ -33,6 +33,20 @@ export const masterLabels = {
 
 const ARQUIVAVEIS = ["pessoas", "categorias", "contas-bancarias"];
 
+// Nome no singular e se o título usa "Nova" ou "Novo"
+const SINGULAR = {
+  pessoas: ["pessoa", true],
+  categorias: ["categoria", true],
+  bancos: ["banco", false],
+  agencias: ["agência", true],
+  "contas-bancarias": ["conta bancária", true],
+};
+
+export function tituloCadastro(tipo, editando) {
+  const [nome, feminino] = SINGULAR[tipo];
+  return (editando ? "Editar" : feminino ? "Nova" : "Novo") + " " + nome;
+}
+
 const ICONES = {
   pessoas: Users,
   categorias: Tags,
@@ -81,7 +95,7 @@ export function Cadastros() {
   const Icone = ICONES[type];
   const abrirForm = (row) =>
     openModal(
-      (row?.id ? "Editar" : "Novo") + " · " + masterLabels[type],
+      tituloCadastro(type, Boolean(row?.id)),
       <CadastroForm type={type} row={row} dados={cadastros.dados} />,
     );
 

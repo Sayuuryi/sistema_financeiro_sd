@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useApp } from "../contexto/AppContext.jsx";
 import { useSessao } from "../contexto/SessaoContext.jsx";
 import { api } from "../core/api.js";
-import { Field, useEnvio } from "./Formularios.jsx";
+import { ErroFormulario, Field, useEnvio } from "./Formularios.jsx";
 
 // Edição rápida da empresa, aberta pelo cartão do menu lateral
 export function EmpresaForm() {
@@ -47,9 +47,6 @@ export function EmpresaForm() {
 
   return (
     <form onSubmit={gravar.enviar}>
-      <div className="form-error" hidden={!erro} role="alert">
-        {erro}
-      </div>
       <div className="form-grid">
         <Field
           name="empresa"
@@ -62,6 +59,7 @@ export function EmpresaForm() {
           wide
         />
       </div>
+      <ErroFormulario erro={erro} />
       <p className="sub empresa-dica">Aparece no menu lateral e no seu perfil.</p>
       <div className="dialog-actions">
         {usuario.empresa ? (

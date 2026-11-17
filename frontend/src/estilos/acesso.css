@@ -66,15 +66,12 @@
 
 .auth-tabs .tab {
   flex: 1;
+  justify-content: center;
 }
 
 .auth-form {
   display: grid;
   gap: 15px;
-}
-
-.auth-form .form-error {
-  margin-bottom: 0;
 }
 
 .auth-input {
@@ -145,6 +142,7 @@
 @media (max-width: 860px) {
   .auth {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
   .auth-brand {
     padding: 24px;

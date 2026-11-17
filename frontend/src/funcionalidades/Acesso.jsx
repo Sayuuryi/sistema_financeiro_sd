@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChartColumn, Eye, EyeOff, Lock, Mail, QrCode, ReceiptText, UserRound } from "lucide-react";
 import { useSessao } from "../contexto/SessaoContext.jsx";
-import { useEnvio } from "../componentes/Formularios.jsx";
+import { ErroFormulario, useEnvio } from "../componentes/Formularios.jsx";
 
 function Campo({ icone, label, name, type = "text", ...attrs }) {
   return (
@@ -41,9 +41,6 @@ function Entrar() {
 
   return (
     <form onSubmit={enviar} className="auth-form">
-      <div className="form-error" hidden={!erro} role="alert">
-        {erro}
-      </div>
       <Campo
         icone={<Mail size={15} aria-hidden="true" />}
         label="E-mail"
@@ -53,6 +50,7 @@ function Entrar() {
         required
       />
       <CampoSenha autoComplete="current-password" />
+      <ErroFormulario erro={erro} />
       <button type="submit" className="button primary auth-submit" disabled={enviando}>
         {enviando ? "Entrando…" : "Entrar"}
       </button>
@@ -69,9 +67,6 @@ function Cadastrar() {
 
   return (
     <form onSubmit={enviar} className="auth-form">
-      <div className="form-error" hidden={!erro} role="alert">
-        {erro}
-      </div>
       <Campo
         icone={<UserRound size={15} aria-hidden="true" />}
         label="Nome"
@@ -99,6 +94,7 @@ function Cadastrar() {
         maxLength={72}
       />
       <small className="auth-hint">Mínimo de 8 caracteres.</small>
+      <ErroFormulario erro={erro} />
       <button type="submit" className="button primary auth-submit" disabled={enviando}>
         {enviando ? "Criando conta…" : "Criar conta"}
       </button>

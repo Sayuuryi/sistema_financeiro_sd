@@ -420,27 +420,42 @@ function ContaDetalhe({ conta: c, historico: h }) {
           <strong>{money(c.saldo)}</strong>
         </div>
       </div>
-      <p className="sub">
-        Emissão: {date(c.emissao)} · Vencimento: {date(c.vencimento)}
-        <br />
-        Desconto permitido: {money(c.descontoMaximo)} até {date(c.validadeDesconto)}
-        <br />
-        Descontos utilizados: {money(c.totalDesconto)} · Acréscimos: {money(c.totalAcrescimo)}
-        <br />
+      <dl className="detail-info">
+        <div>
+          <dt>Emissão</dt>
+          <dd>{date(c.emissao)}</dd>
+        </div>
+        <div>
+          <dt>Vencimento</dt>
+          <dd>{date(c.vencimento)}</dd>
+        </div>
+        <div>
+          <dt>Desconto permitido</dt>
+          <dd>
+            {Number(c.descontoMaximo) > 0
+              ? money(c.descontoMaximo) + " até " + date(c.validadeDesconto)
+              : "Sem desconto"}
+          </dd>
+        </div>
+        <div>
+          <dt>Descontos usados</dt>
+          <dd>{money(c.totalDesconto)}</dd>
+        </div>
+        <div>
+          <dt>Acréscimos</dt>
+          <dd>{money(c.totalAcrescimo)}</dd>
+        </div>
         {c.despesaOrigemId ? (
-          <>
-            Origem: previsão #{c.despesaOrigemId}
-            <br />
-          </>
+          <div>
+            <dt>Origem</dt>
+            <dd>Previsão #{c.despesaOrigemId}</dd>
+          </div>
         ) : null}
-        {c.observacoes || ""}
-        {c.motivoCancelamento ? (
-          <>
-            <br />
-            Cancelamento: {c.motivoCancelamento}
-          </>
-        ) : null}
-      </p>
+      </dl>
+      {c.observacoes ? <p className="detail-note">{c.observacoes}</p> : null}
+      {c.motivoCancelamento ? (
+        <div className="notice warning">Cancelado: {c.motivoCancelamento}</div>
+      ) : null}
       <div className="actions" style={{ margin: "20px 0" }}>
         {canSettle ? (
           <button

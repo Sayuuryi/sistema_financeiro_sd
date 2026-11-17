@@ -238,12 +238,19 @@
 }
 
 .cover-picker {
+  position: absolute;
+  top: 116px;
+  right: 12px;
+  width: 300px;
   display: grid;
   gap: 12px;
-  padding: 14px 18px;
-  border-bottom: 1px solid #edf1f2;
-  background: #fafcfc;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px #122d361f;
   justify-items: center;
+  z-index: 26;
 }
 
 .cover-swatches {
@@ -303,19 +310,6 @@
 
 .profile-card > .sub {
   margin-top: 6px;
-}
-
-.profile-remove-photo {
-  border: 0;
-  background: none;
-  color: #8a9ca3;
-  font-size: 11px;
-  text-decoration: underline;
-  margin-top: 8px;
-}
-
-.profile-remove-photo:hover {
-  color: var(--red);
 }
 
 .profile-facts {
@@ -454,4 +448,111 @@
 
 .empresa-remover {
   margin-right: auto;
+}
+
+/* Menu da foto */
+
+.photo-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 236px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px #122d361f;
+  padding: 6px;
+  z-index: 25;
+  text-align: left;
+}
+
+.photo-menu button {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 0;
+  background: none;
+  border-radius: 8px;
+  padding: 10px;
+  color: #4c646c;
+  font-size: 12px;
+}
+
+.photo-menu button svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.photo-menu button small {
+  display: block;
+  color: #8a9ca3;
+  font-size: 10px;
+  margin-top: 3px;
+}
+
+.photo-menu button:hover {
+  background: #f1f7f5;
+}
+
+.photo-menu button.danger {
+  color: var(--red);
+}
+
+.photo-menu button.danger:hover {
+  background: #fdf1f0;
+}
+
+.profile-card {
+  position: relative;
+}
+
+.photo-menu button,
+.user-menu-head span {
+  text-align: left;
+}
+
+.detail-info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 0 0 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fafcfc;
+}
+
+.detail-info dt {
+  font-size: 10px;
+  color: #8a9ca3;
+}
+
+.detail-info dd {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.detail-note {
+  font-size: 12px;
+  color: #5e7b78;
+  margin: 12px 0 0;
+}
+
+@media (max-width: 700px) {
+  .detail-info {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cover-picker {
+    left: 12px;
+    width: auto;
+  }
+}
+
+/* O app.css antigo dava margem ao <b> da barra superior (trilha removida) */
+.user-menu-head b {
+  margin: 0;
 }

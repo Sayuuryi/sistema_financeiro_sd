@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Building2,
   CalendarDays,
@@ -20,7 +20,7 @@ import { api } from "../core/api.js";
 import { FUNDOS, ehImagem, estiloCapa, prepararImagem } from "../core/imagens.js";
 import { useQuadroEstatico } from "../componentes/QuadroEstatico.js";
 import { Avatar } from "../componentes/Avatar.jsx";
-import { Field, useEnvio } from "../componentes/Formularios.jsx";
+import { ErroFormulario, Field, useEnvio } from "../componentes/Formularios.jsx";
 import { PageHead } from "../componentes/Layout.jsx";
 
 const dataHora = (valor) =>
@@ -66,9 +66,6 @@ function DadosConta({ usuario }) {
         descricao="Nome e e-mail aparecem no menu e servem para entrar"
       />
       <form className="panel-body" onSubmit={enviar} key={usuario.versao}>
-        <div className="form-error" hidden={!erro} role="alert">
-          {erro}
-        </div>
         <div className="form-grid">
           <Field name="nome" label="Nome *" value={usuario.nome} required maxLength={120} />
           <Field
@@ -89,6 +86,7 @@ function DadosConta({ usuario }) {
           <Field name="cargo" label="Cargo" value={usuario.cargo} maxLength={80} />
           <Field name="empresa" label="Empresa" value={usuario.empresa} maxLength={120} wide />
         </div>
+        <ErroFormulario erro={erro} />
         <div className="dialog-actions">
           <button type="submit" className="button primary" disabled={enviando}>
             Salvar alterações
@@ -119,9 +117,6 @@ function Seguranca() {
         descricao="Ao trocar a senha, as sessões em outros navegadores são encerradas"
       />
       <form className="panel-body" onSubmit={enviar}>
-        <div className="form-error" hidden={!erro} role="alert">
-          {erro}
-        </div>
         <div className="form-grid">
           <Field
             name="senhaAtual"
@@ -150,6 +145,7 @@ function Seguranca() {
             maxLength={72}
           />
         </div>
+        <ErroFormulario erro={erro} />
         <div className="dialog-actions">
           <button type="submit" className="button primary" disabled={enviando}>
             Alterar senha
@@ -158,6 +154,28 @@ function Seguranca() {
       </form>
     </article>
   );
+}
+
+// Menu que fecha ao clicar fora ou apertar Esc
+function useMenuFlutuante(botao) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && !e.target.closest?.(botao)) {
+        setAberto(false);
+      }
+    };
+    const esc = (e) => e.key === "Escape" && setAberto(false);
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [aberto]);
+  return { aberto, setAberto, ref };
 }
 
 // Envia, remove ou troca foto e capa e atualiza a sessão
@@ -205,8 +223,11 @@ function CartaoPerfil({ usuario }) {
   const foto = useImagem("foto");
   const capa = useImagem("capa");
   const capaVisivel = useQuadroEstatico(usuario.capa);
+  const menuFoto = useMenuFlutuante(".profile-photo-button");
+  const menuCapa = useMenuFlutuante(".profile-cover-button");
+  const fundos = menuCapa.aberto;
+  const setFundos = menuCapa.setAberto;
   const capaPropria = ehImagem(usuario.capa);
-  const [fundos, setFundos] = useState(false);
   const arquivoFoto = useRef(null);
   const arquivoCapa = useRef(null);
   const detalhe = [usuario.cargo, usuario.empresa].filter(Boolean).join(" · ");
@@ -230,7 +251,7 @@ function CartaoPerfil({ usuario }) {
         </button>
       </div>
       {fundos ? (
-        <div className="cover-picker" role="group" aria-label="Escolher capa">
+        <div className="cover-picker" role="group" aria-label="Escolher capa" ref={menuCapa.ref}>
           <div className="cover-swatches">
             {Object.entries(FUNDOS).map(([chave, fundo]) => (
               <button
@@ -283,12 +304,42 @@ function CartaoPerfil({ usuario }) {
         ) : null}
         <button
           className="profile-photo-button"
-          aria-label="Trocar foto"
-          title="Trocar foto"
+          aria-label="Alterar foto"
+          title="Alterar foto"
+          aria-haspopup="menu"
+          aria-expanded={menuFoto.aberto}
           disabled={foto.enviando}
-          onClick={() => arquivoFoto.current.click()}>
+          onClick={() => menuFoto.setAberto((v) => !v)}>
           <Camera size={15} aria-hidden="true" />
         </button>
+        {menuFoto.aberto ? (
+          <div className="photo-menu" role="menu" ref={menuFoto.ref}>
+            <button
+              role="menuitem"
+              onClick={() => {
+                menuFoto.setAberto(false);
+                arquivoFoto.current.click();
+              }}>
+              <ImagePlus size={15} aria-hidden="true" />
+              <span>
+                {usuario.foto ? "Trocar foto" : "Enviar foto"}
+                <small>PNG, JPEG, WebP ou GIF até 1 MB</small>
+              </span>
+            </button>
+            {usuario.foto ? (
+              <button
+                role="menuitem"
+                className="danger"
+                onClick={() => {
+                  menuFoto.setAberto(false);
+                  foto.remover("Foto removida.");
+                }}>
+                <Trash2 size={15} aria-hidden="true" />
+                <span>Remover foto</span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <input
           ref={arquivoFoto}
           type="file"
@@ -299,14 +350,6 @@ function CartaoPerfil({ usuario }) {
       </div>
       <h2>{usuario.nome}</h2>
       <p className="sub">{detalhe || "Cargo e empresa não informados"}</p>
-      {usuario.foto ? (
-        <button
-          className="profile-remove-photo"
-          disabled={foto.enviando}
-          onClick={() => foto.remover("Foto removida.")}>
-          Remover foto
-        </button>
-      ) : null}
       <div className="panel-body profile-facts">
         <div className="mini-line">
           <span>

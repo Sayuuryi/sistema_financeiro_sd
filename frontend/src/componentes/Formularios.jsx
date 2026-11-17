@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CircleAlert } from "lucide-react";
 import { useApp } from "../contexto/AppContext.jsx";
 
 export function Field({ name, label, type = "text", value = "", wide = false, ...attrs }) {
@@ -51,6 +52,16 @@ export function ActiveField({ value = true }) {
   );
 }
 
+export function ErroFormulario({ erro }) {
+  if (!erro) return null;
+  return (
+    <div className="form-erro" role="alert">
+      <CircleAlert size={16} aria-hidden="true" />
+      <span>{erro}</span>
+    </div>
+  );
+}
+
 // Formulário padrão das janelas de cadastro
 export function FormEditor({ children, submitLabel = "Salvar", onSubmit }) {
   const { closeModal, toast, atualizar } = useApp();
@@ -75,10 +86,8 @@ export function FormEditor({ children, submitLabel = "Salvar", onSubmit }) {
 
   return (
     <form id="editor" onSubmit={enviar}>
-      <div id="form-error" className="form-error" hidden={!erro} role="alert">
-        {erro}
-      </div>
       <div className="form-grid">{children}</div>
+      <ErroFormulario erro={erro} />
       <div className="dialog-actions">
         <button type="button" className="button" id="cancel-editor" onClick={closeModal}>
           Cancelar

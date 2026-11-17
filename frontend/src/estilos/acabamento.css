@@ -224,3 +224,27 @@ nav button:hover {
     border-radius: 10px;
   }
 }
+
+.form-erro {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 11px 13px;
+  border: 1px solid #f4d9d3;
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  background: #fff4f2;
+  color: #a4473f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.form-erro svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.auth-form .form-erro {
+  margin-top: 0;
+}
