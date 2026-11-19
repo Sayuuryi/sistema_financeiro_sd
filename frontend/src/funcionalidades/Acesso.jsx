@@ -91,9 +91,7 @@ function Entrar() {
         <MonitorPlay size={18} aria-hidden="true" />
         <span>
           <b>Entrar com a conta de demonstração</b>
-          <small>
-            {CONTA_DEMO.email} · senha {CONTA_DEMO.senha}
-          </small>
+          <small>Conheça o sistema com dados de exemplo</small>
         </span>
       </button>
     </form>
