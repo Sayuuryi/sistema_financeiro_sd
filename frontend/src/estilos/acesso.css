@@ -159,3 +159,62 @@
     padding: 26px 20px;
   }
 }
+
+.auth-divisor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a5a9;
+  font-size: 11px;
+}
+
+.auth-divisor::before,
+.auth-divisor::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.auth-demo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px dashed #b9d6d2;
+  border-radius: 10px;
+  background: #f7fbfa;
+  color: var(--teal);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.auth-demo:hover:not(:disabled) {
+  border-color: var(--teal);
+  background: var(--teal-light);
+}
+
+.auth-demo:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-demo span {
+  display: grid;
+  gap: 2px;
+}
+
+.auth-demo b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auth-demo small {
+  color: var(--muted);
+  font-size: 11px;
+}

@@ -7,6 +7,7 @@ import {
   EyeOff,
   Lock,
   Mail,
+  MonitorPlay,
   Phone,
   QrCode,
   ReceiptText,
@@ -49,6 +50,16 @@ function CampoSenha({ label = "Senha", name = "senha", ...attrs }) {
   );
 }
 
+const CONTA_DEMO = { email: "demo@fluxo.com", senha: "123456" };
+
+// Preenche os campos com a conta de demonstração e envia o formulário
+function entrarComDemo(evento) {
+  const formulario = evento.currentTarget.form;
+  formulario.elements.email.value = CONTA_DEMO.email;
+  formulario.elements.senha.value = CONTA_DEMO.senha;
+  formulario.requestSubmit();
+}
+
 function Entrar() {
   const { entrar } = useSessao();
   const { erro, enviando, enviar } = useEnvio((d) => entrar(d.email, d.senha));
@@ -67,6 +78,23 @@ function Entrar() {
       <ErroFormulario erro={erro} />
       <button type="submit" className="button primary auth-submit" disabled={enviando}>
         {enviando ? "Entrando…" : "Entrar"}
+      </button>
+      <div className="auth-divisor">
+        <span>ou</span>
+      </div>
+      <button
+        type="button"
+        className="auth-demo"
+        aria-label="Entrar com a conta de demonstração"
+        disabled={enviando}
+        onClick={entrarComDemo}>
+        <MonitorPlay size={18} aria-hidden="true" />
+        <span>
+          <b>Entrar com a conta de demonstração</b>
+          <small>
+            {CONTA_DEMO.email} · senha {CONTA_DEMO.senha}
+          </small>
+        </span>
       </button>
     </form>
   );
